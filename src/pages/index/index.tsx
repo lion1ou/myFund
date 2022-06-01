@@ -38,7 +38,7 @@ const Index = () => {
     },
     "011103": {
       lastBuyPrice: "1.1195",
-      avgPrice: "1.3628"
+      avgPrice: "1.2994"
     },
     "002190": {
       lastBuyPrice: "3.3694",
