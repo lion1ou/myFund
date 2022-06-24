@@ -58,8 +58,12 @@ function Index() {
       avgPrice: '7.3992',
     },
   };
-
-  const [fundInfoList, setFundInfoList] = useState([...testData]);
+  let initData:any[] = [];
+  if (env === 'h5') {
+    const { host } = window.location;
+    initData = host === 'toy.lion1ou.tech' ? [] : [...testData];
+  }
+  const [fundInfoList, setFundInfoList] = useState(initData);
   const [loading, setLoading] = useState(false);
   const getFundInfoListHandle = () => {
     setLoading(true);
