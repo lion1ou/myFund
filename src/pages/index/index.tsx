@@ -6,7 +6,7 @@ import {
   useEnv, useNavigationBar, useModal, useToast,
 } from 'taro-hooks';
 import dayjs from 'dayjs';
-import { getFundInfo, getFundInfoList } from '../../api/index';
+import { getFundInfo, getFundInfoList, getFundDetails } from '../../api/index';
 
 import './index.less';
 import testData from './test';
@@ -17,11 +17,13 @@ function Index() {
   const fundCodeArr = [
     '003095',
     '161725',
-    '005827',
     '110020',
-    '011103',
+    '005827',
+    '005669',
+    '320007',
     '002190',
     '001475',
+    '011103',
     '110011',
   ];
   const fundBuyInfo = {
@@ -101,83 +103,61 @@ function Index() {
     const res = fundInfoList
       .map((item: any) => ({
         ...item,
-        todayDiffLastBuy: ((item.expectWorth - fundBuyInfo[item.code].lastBuyPrice) * 100) / fundBuyInfo[item.code].lastBuyPrice,
-        diffAvgPrice: ((item.expectWorth - fundBuyInfo[item.code].avgPrice) * 100) / fundBuyInfo[item.code].avgPrice,
-        diffLastBuy: ((item.netWorth - fundBuyInfo[item.code].lastBuyPrice) * 100) / fundBuyInfo[item.code].lastBuyPrice,
-        diffyesterDayPrice: ((item.netWorth - fundBuyInfo[item.code].avgPrice) * 100) / fundBuyInfo[item.code].avgPrice,
-        continuousUpOrDown: getContinuousNum(item.netWorthData.slice(0, -1), item.netWorthData[item.netWorthData.length - 1][2]),
-        todayContinuousUpOrDown: getContinuousNum(item.netWorthData, item.expectGrowth),
-      })).sort((a, b) => a.diffLastBuy - b.diffLastBuy);
+        todayDiffLastBuy: fundBuyInfo[item.code] ? ((item.expectWorth - fundBuyInfo[item.code].lastBuyPrice) * 100) / fundBuyInfo[item.code].lastBuyPrice : 0,
+        diffAvgPrice: fundBuyInfo[item.code] ? ((item.expectWorth - fundBuyInfo[item.code].avgPrice) * 100) / fundBuyInfo[item.code].avgPrice : 0,
+        // diffLastBuy: ((item.netWorth - fundBuyInfo[item.code].lastBuyPrice) * 100) / fundBuyInfo[item.code].lastBuyPrice || 0,
+        // diffyesterDayPrice: ((item.netWorth - fundBuyInfo[item.code].avgPrice) * 100) / fundBuyInfo[item.code].avgPrice || 0,
+        continuousUpOrDown: getContinuousNum(item.netWorthData.slice(0, -1), item.netWorthData[item.netWorthData.length - 1][2]) || 0,
+        todayContinuousUpOrDown: getContinuousNum(item.netWorthData, item.expectGrowth) || 0,
+      })).sort((a, b) => a.todayContinuousUpOrDown - b.todayContinuousUpOrDown);
 
     return res.map((item) => (
-      <View style={{ border: '1px solid #ddd', margin: '5px' }}>
-        <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: '18px' }}>{item.name}</Text>
-          <Text style={{ fontSize: '12px', display: 'block', textAlign: 'right' }}>
-            {item.expectWorthDate}
-          </Text>
+      <View style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+        <View style={{ width: '200px', textAlign: 'center' }}>{item.name}</View>
+        <View style={{
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.expectGrowth) > 0 ? '#ff6040' : '#006040',
+        }}
+        >
+          {item.expectWorth}
         </View>
-
-        <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{}}>
-            <Text style={{ fontSize: '14px' }}>昨日</Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: Number(item.netWorthData[item.netWorthData.length - 1][2]) > 0 ? '#ff6040' : '#006040' }}>
-              趋势：
-              {item.totalNetWorthData[item.totalNetWorthData.length - 1][1]}
-              /
-              {item.netWorthData[item.netWorthData.length - 1][2]}
-              %
-            </Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: item.continuousUpOrDown > 0 ? '#ff6040' : '#006040' }}>
-              连续：
-              {item.continuousUpOrDown.toFixed(2)}
-              %
-            </Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: item.diffyesterDayPrice > 0 ? '#ff6040' : '#006040' }}>
-              成本：
-              {item.diffyesterDayPrice.toFixed(2)}
-              %
-            </Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: item.diffLastBuy > 0 ? '#ff6040' : '#006040' }}>
-              最后成交：
-              {item.diffLastBuy.toFixed(2)}
-              %
-            </Text>
-          </View>
-
-          <View style={{}}>
-            <Text style={{ fontSize: '14px' }}>今日</Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: Number(item.expectGrowth) > 0 ? '#ff6040' : '#006040' }}>
-              趋势：
-              {item.expectWorth}
-              /
-              {item.expectGrowth}
-              %
-            </Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: item.todayContinuousUpOrDown > 0 ? '#ff6040' : '#006040' }}>
-              连续：
-              {item.todayContinuousUpOrDown.toFixed(2)}
-              %
-            </Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: item.diffAvgPrice > 0 ? '#ff6040' : '#006040' }}>
-              成本：
-              {item.diffAvgPrice.toFixed(2)}
-              %
-            </Text>
-            <Text style={{ fontSize: '14px', display: 'block', color: item.todayDiffLastBuy > 0 ? '#ff6040' : '#006040' }}>
-              最后成交：
-              {item.todayDiffLastBuy.toFixed(2)}
-              %
-            </Text>
-          </View>
+        <View style={{
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.expectGrowth) > 0 ? '#ff6040' : '#006040',
+        }}
+        >
+          {item.expectGrowth}
+          %
         </View>
-        <View>
-          <Text style={{ fontSize: '12px' }}>操作建议：</Text>
-          <Text style={{ fontSize: '20px' }}>
-            {item.todayContinuousUpOrDown > 3 && item.diffAvgPrice >= 10 ? '卖' : item.todayContinuousUpOrDown < -5 ? '买' : '无'}
-          </Text>
+        <View style={{
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: item.todayContinuousUpOrDown > 0 ? '#ff6040' : '#006040',
+        }}
+        >
+
+          {item.todayContinuousUpOrDown.toFixed(2)}
+          %
+        </View>
+        <View style={{
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: item.todayDiffLastBuy > 0 ? '#ff6040' : '#006040',
+        }}
+        >
+
+          {item.todayDiffLastBuy.toFixed(2)}
+          %
+        </View>
+        <View style={{
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.netWorthData[item.netWorthData.length - 1][2]) > 0 ? '#ff6040' : '#006040',
+        }}
+        >
+          {item.totalNetWorthData[item.totalNetWorthData.length - 1][1]}
+        </View>
+        <View style={{
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.netWorthData[item.netWorthData.length - 1][2]) > 0 ? '#ff6040' : '#006040',
+        }}
+        >
+          {item.netWorthData[item.netWorthData.length - 1][2]}
+          %
         </View>
       </View>
+
     ));
   };
 
@@ -187,6 +167,27 @@ function Index() {
         获取数据
       </Button>
       {loading ? <Text style={{ textAlign: 'center' }}>加载中...</Text> : ''}
+      <View style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+        <View style={{ width: '200px', textAlign: 'center' }}>名称</View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          今日实时
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          今日差率
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          连续趋势
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          最后成交差率
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          昨日实时
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          昨日差率
+        </View>
+      </View>
       {renderList()}
     </View>
   );
