@@ -135,19 +135,20 @@ function Index() {
           {item.todayContinuousUpOrDown.toFixed(2)}
           %
         </View>
-        <View style={{
+        {/* <View style={{
           textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: item.todayDiffLastBuy > 0 ? '#ff6040' : '#006040',
         }}
         >
 
           {item.todayDiffLastBuy.toFixed(2)}
           %
-        </View>
+        </View> */}
         <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.netWorthData[item.netWorthData.length - 1][2]) > 0 ? '#ff6040' : '#006040',
+          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.continuousUpOrDown) > 0 ? '#ff6040' : '#006040',
         }}
         >
-          {item.totalNetWorthData[item.totalNetWorthData.length - 1][1]}
+          {item.continuousUpOrDown.toFixed(2)}
+          %
         </View>
         <View style={{
           textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.netWorthData[item.netWorthData.length - 1][2]) > 0 ? '#ff6040' : '#006040',
@@ -176,13 +177,13 @@ function Index() {
           今日差率
         </View>
         <View style={{ textAlign: 'center', width: '100px' }}>
-          连续趋势
+          今日连续
         </View>
-        <View style={{ textAlign: 'center', width: '100px' }}>
+        {/* <View style={{ textAlign: 'center', width: '100px' }}>
           最后成交差率
-        </View>
+        </View> */}
         <View style={{ textAlign: 'center', width: '100px' }}>
-          昨日实时
+          昨日连续
         </View>
         <View style={{ textAlign: 'center', width: '100px' }}>
           昨日差率
