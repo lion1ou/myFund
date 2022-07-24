@@ -14,62 +14,48 @@ import testData from './test';
 function Index() {
   const env = useEnv();
 
-  const fundCodeArr = [
-    '003095',
-    '161725',
-    '110020',
-    '005827',
-    '005669',
-    '320007',
-    '002190',
-    '001475',
-    '011103',
-    '110011',
-  ];
   const fundBuyInfo = {
     '003095': {
-      lastBuyPrice: '2.5080',
-      avgPrice: '3.1320',
+      lastBuyDate: '2022-06-28',
     },
     161725: {
-      lastBuyPrice: '1.0302',
-      avgPrice: '1.2053',
-    },
-    '005827': {
-      lastBuyPrice: '2.4799',
-      avgPrice: '2.6587',
+      lastBuyDate: '2022-07-07',
     },
     110020: {
-      lastBuyPrice: '1.7569',
-      avgPrice: '1.8808',
+      lastBuyDate: '2022-07-05',
     },
-    '011103': {
-      lastBuyPrice: '1.1195',
-      avgPrice: '1.2994',
+    '005827': {
+      lastBuyDate: '2021-09-15',
     },
-    '002190': {
-      lastBuyPrice: '3.3694',
-      avgPrice: '3.9964',
+    320007: {
+      lastBuyDate: '2022-07-13',
     },
     '001475': {
-      lastBuyPrice: '1.5420',
-      avgPrice: '1.6722',
+      lastBuyDate: '2022-07-13',
+    },
+    '005669': {
+      lastBuyDate: '2022-07-12',
+    },
+    '002190': {
+      lastBuyDate: '2022-07-11',
     },
     110011: {
-      lastBuyPrice: '6.2173',
-      avgPrice: '7.3992',
+      lastBuyDate: '2022-07-13',
+    },
+    '011103': {
+      lastBuyDate: '2022-07-11',
     },
   };
-  let initData:any[] = [];
-  if (env === 'h5') {
-    const { host } = window.location;
-    initData = host === 'toy.lion1ou.tech' ? [] : [...testData];
-  }
-  const [fundInfoList, setFundInfoList] = useState(initData);
+
+  const isPro = env === 'WEB' && window.location.host === 'toy.lion1ou.tech';
+
+  const [fundInfoList, setFundInfoList] = isPro ? useState([]) : useState(testData);
+
   const [loading, setLoading] = useState(false);
   const getFundInfoListHandle = () => {
     setLoading(true);
     const today = dayjs().format('YYYY-MM-DD');
+    const fundCodeArr = Object.keys(fundBuyInfo);
     getFundInfoList(fundCodeArr, today).then((res: any) => {
       setFundInfoList(res.data);
       setLoading(false);
@@ -92,6 +78,16 @@ function Index() {
     return a + Number(current);
   };
 
+  const getDayPrice = (historyList, date) => {
+    const lens = historyList.length;
+    for (let i = lens - 1; i > 0; i -= 1) {
+      if (historyList[i][0] === date) {
+        return historyList[i][1];
+      }
+    }
+    return 0;
+  };
+
   const renderList = () => {
     if (!fundInfoList.length) {
       return (
@@ -101,59 +97,53 @@ function Index() {
       );
     }
     const res = fundInfoList
-      .map((item: any) => ({
-        ...item,
-        todayDiffLastBuy: fundBuyInfo[item.code] ? ((item.expectWorth - fundBuyInfo[item.code].lastBuyPrice) * 100) / fundBuyInfo[item.code].lastBuyPrice : 0,
-        diffAvgPrice: fundBuyInfo[item.code] ? ((item.expectWorth - fundBuyInfo[item.code].avgPrice) * 100) / fundBuyInfo[item.code].avgPrice : 0,
-        // diffLastBuy: ((item.netWorth - fundBuyInfo[item.code].lastBuyPrice) * 100) / fundBuyInfo[item.code].lastBuyPrice || 0,
-        // diffyesterDayPrice: ((item.netWorth - fundBuyInfo[item.code].avgPrice) * 100) / fundBuyInfo[item.code].avgPrice || 0,
-        continuousUpOrDown: getContinuousNum(item.netWorthData.slice(0, -1), item.netWorthData[item.netWorthData.length - 1][2]) || 0,
-        todayContinuousUpOrDown: getContinuousNum(item.netWorthData, item.expectGrowth) || 0,
-      })).sort((a, b) => a.todayContinuousUpOrDown - b.todayContinuousUpOrDown);
+      .map((item: any) => {
+        const lastBuyPrice = fundBuyInfo[item.code] ? getDayPrice(item.totalNetWorthData, fundBuyInfo[item.code].lastBuyDate) : 0;
+        return {
+          ...item,
+          ...fundBuyInfo[item.code],
+          todayDiffLastBuy: ((item.expectWorth - lastBuyPrice) * 100) / lastBuyPrice || 0,
+          diffLastBuy: ((item.netWorth - lastBuyPrice) * 100) / lastBuyPrice || 0,
+          todayContinuousUpOrDown: getContinuousNum(item.netWorthData, item.expectGrowth) || 0,
+          continuousUpOrDown: getContinuousNum(item.netWorthData.slice(0, -1), item.netWorthData[item.netWorthData.length - 1][2]) || 0,
+        };
+      }).sort((a, b) => a.todayContinuousUpOrDown - b.todayContinuousUpOrDown);
+
+    const colorStyle = (val) => ({ color: (Number(val) > 0 ? '#ff6040' : '#006040') });
 
     return res.map((item) => (
-      <View style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+      <View style={{
+        display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #ddd',
+      }}
+      >
         <View style={{ width: '200px', textAlign: 'center' }}>{item.name}</View>
-        <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.expectGrowth) > 0 ? '#ff6040' : '#006040',
-        }}
-        >
+        <View className="num-text" style={colorStyle(item.expectWorth)}>
           {item.expectWorth}
         </View>
-        <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.expectGrowth) > 0 ? '#ff6040' : '#006040',
-        }}
-        >
+        <View className="num-text" style={colorStyle(item.expectGrowth)}>
           {item.expectGrowth}
           %
         </View>
-        <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: item.todayContinuousUpOrDown > 0 ? '#ff6040' : '#006040',
-        }}
-        >
-
+        <View className="num-text" style={colorStyle(item.todayDiffLastBuy)}>
+          <View>
+            {item.todayDiffLastBuy.toFixed(2)}
+            %
+          </View>
+          <View>{item.lastBuyDate}</View>
+        </View>
+        <View className="num-text" style={colorStyle(item.todayContinuousUpOrDown)}>
           {item.todayContinuousUpOrDown.toFixed(2)}
           %
         </View>
-        {/* <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: item.todayDiffLastBuy > 0 ? '#ff6040' : '#006040',
-        }}
-        >
-
-          {item.todayDiffLastBuy.toFixed(2)}
-          %
-        </View> */}
-        <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.continuousUpOrDown) > 0 ? '#ff6040' : '#006040',
-        }}
-        >
+        <View className="num-text" style={colorStyle(item.continuousUpOrDown)}>
           {item.continuousUpOrDown.toFixed(2)}
           %
         </View>
-        <View style={{
-          textAlign: 'center', width: '100px', fontSize: '14px', display: 'block', color: Number(item.netWorthData[item.netWorthData.length - 1][2]) > 0 ? '#ff6040' : '#006040',
-        }}
-        >
+        <View className="num-text" style={colorStyle(item.diffLastBuy)}>
+          {item.diffLastBuy.toFixed(2)}
+          %
+        </View>
+        <View className="num-text" style={colorStyle(item.netWorthData[item.netWorthData.length - 1][2])}>
           {item.netWorthData[item.netWorthData.length - 1][2]}
           %
         </View>
@@ -164,11 +154,17 @@ function Index() {
 
   return (
     <View className="wrapper">
-      <Button size="mini" type="primary" onClick={getFundInfoListHandle}>
-        获取数据
-      </Button>
+      <View className="flex-between" style={{ marginBottom: '10px' }}>
+        <Button size="mini" type="primary" onClick={getFundInfoListHandle} style={{ display: 'inline-block' }}>
+          获取数据
+        </Button>
+        <Text>
+          {fundInfoList.length ? fundInfoList[0].netWorthDate : ''}
+        </Text>
+      </View>
+
       {loading ? <Text style={{ textAlign: 'center' }}>加载中...</Text> : ''}
-      <View style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+      <View className="flex-between" style={{ borderBottom: '1px solid #cccccc' }}>
         <View style={{ width: '200px', textAlign: 'center' }}>名称</View>
         <View style={{ textAlign: 'center', width: '100px' }}>
           今日实时
@@ -177,13 +173,17 @@ function Index() {
           今日差率
         </View>
         <View style={{ textAlign: 'center', width: '100px' }}>
+          最后成交差率
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
           今日连续
         </View>
-        {/* <View style={{ textAlign: 'center', width: '100px' }}>
-          最后成交差率
-        </View> */}
+
         <View style={{ textAlign: 'center', width: '100px' }}>
           昨日连续
+        </View>
+        <View style={{ textAlign: 'center', width: '100px' }}>
+          最后成交差率
         </View>
         <View style={{ textAlign: 'center', width: '100px' }}>
           昨日差率
